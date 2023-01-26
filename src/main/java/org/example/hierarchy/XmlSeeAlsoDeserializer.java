@@ -1,16 +1,19 @@
 package org.example.hierarchy;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.PropertyMetadata;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.PropertyName;
+import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.deser.AbstractDeserializer;
-import com.fasterxml.jackson.databind.introspect.*;
-import com.fasterxml.jackson.databind.util.SimpleBeanPropertyDefinition;
+import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
+import com.fasterxml.jackson.databind.introspect.AnnotatedClassResolver;
+import com.fasterxml.jackson.databind.introspect.BasicBeanDescription;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -48,15 +51,26 @@ public class XmlSeeAlsoDeserializer extends AbstractDeserializer {
             throw new IllegalStateException("No mapping found for " + resolved + " within " + types.keySet());
         }
         if (parser.nextToken().isStructEnd()) {
-            // TODO: this is unlikely a good solution. But the codec will otherwise return 'null' for an empty object.
-            // Attempt: return context.getFactory().findValueInstantiator(context, whatToPutHere).createUsingDefault(context);
-            try {
-                return type.getConstructor().newInstance();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
+            JavaType constructed = context.getConfig().constructType(type);
+            return context.getFactory().findValueInstantiator(context, new TypeInformationBeanDescription(
+                    context.getConfig(),
+                    constructed,
+                    AnnotatedClassResolver.resolve(context.getConfig(), constructed, context.getConfig()),
+                    description.findProperties()
+            )).createUsingDefault(context);
         } else {
             return parser.getCodec().readValue(parser, type);
+        }
+    }
+
+    private static class TypeInformationBeanDescription extends BasicBeanDescription {
+        private TypeInformationBeanDescription(
+                MapperConfig<?> config,
+                JavaType type,
+                AnnotatedClass classDef,
+                List<BeanPropertyDefinition> props
+        ) {
+            super(config, type, classDef, props);
         }
     }
 }
