@@ -40,10 +40,6 @@ public class WithSeeAlso {
         @XmlElement(name = "base")
         private Base base = new First();
 
-        public Wrapper() {
-            System.out.println();
-        }
-
         public Base getBase() {
             return base;
         }

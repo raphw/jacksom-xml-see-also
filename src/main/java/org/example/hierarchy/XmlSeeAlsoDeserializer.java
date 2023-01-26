@@ -48,11 +48,13 @@ public class XmlSeeAlsoDeserializer extends AbstractDeserializer {
             throw new IllegalStateException("No mapping found for " + resolved + " within " + types.keySet());
         }
         if (parser.nextToken().isStructEnd()) {
-            return context.getFactory().findValueInstantiator(context, BasicBeanDescription.forOtherUse(
-                    context.getConfig(),
-                    context.constructType(type),
-                    AnnotatedClassResolver.resolveWithoutSuperTypes(context.getConfig(), type)
-            )).createUsingDefault(context);
+            // TODO: this is unlikely a good solution. But the codec will otherwise return 'null' for an empty object.
+            // Attempt: return context.getFactory().findValueInstantiator(context, whatToPutHere).createUsingDefault(context);
+            try {
+                return type.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         } else {
             return parser.getCodec().readValue(parser, type);
         }
