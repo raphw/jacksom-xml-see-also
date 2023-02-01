@@ -16,24 +16,35 @@ public class XmlSeeAlsoModule extends SimpleModule {
 
     private static final String DEFAULT = "##default";
 
-    public XmlSeeAlsoModule() {
-        this("@type");
+    public static XmlSeeAlsoModule ofXsi() {
+        return new XmlSeeAlsoModule("type", "http://www.w3.org/2001/XMLSchema-instance", true);
     }
 
-    public XmlSeeAlsoModule(String name) {
-        this(name, null);
+    public static XmlSeeAlsoModule ofAtType() {
+        return new XmlSeeAlsoModule("@type", null, false);
     }
-    public XmlSeeAlsoModule(String name, String namespace) {
-        this(new PropertyName(name, namespace), PropertyName::toString, new PropertyNameParser());
+
+    public XmlSeeAlsoModule(String name, String namespace, boolean attribute) {
+        this(new PropertyName(name, namespace), attribute, PropertyName::toString, new PropertyNameParser());
     }
 
     public XmlSeeAlsoModule(
             PropertyName property,
+            boolean attribute,
             Function<PropertyName, String> serializationResolver,
             Function<String, PropertyName> deserializationResolver
     ) {
         super(XmlSeeAlso.class.getName() + "Module");
-        setSerializerModifier(new XmlSeeAlsoSerializerModifier(property, serializationResolver));
+        boolean supportsXml;
+        try {
+            Class.forName("com.fasterxml.jackson.dataformat.xml.ser.XmlBeanSerializer");
+            supportsXml = true;
+        } catch (ClassNotFoundException e) {
+            supportsXml = false;
+        }
+        setSerializerModifier(supportsXml
+                ? new XmlSeeAlsoSerializerModifierWithXmlSupport(property, attribute, serializationResolver)
+                : new XmlSeeAlsoSerializerModifier(property, serializationResolver));
         setDeserializerModifier(new XmlSeeAlsoDeserializerModifier(property, deserializationResolver));
     }
 

@@ -12,19 +12,26 @@ import com.fasterxml.jackson.databind.introspect.VirtualAnnotatedMember;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializer;
 import com.fasterxml.jackson.databind.util.SimpleBeanPropertyDefinition;
+import com.fasterxml.jackson.dataformat.xml.ser.XmlBeanSerializer;
+import com.fasterxml.jackson.dataformat.xml.ser.XmlBeanSerializerBase;
+import com.fasterxml.jackson.dataformat.xml.util.XmlInfo;
 
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.function.Function;
 
-class XmlSeeAlsoSerializer extends BeanSerializer {
+class XmlSeeAlsoSerializerWithXmlSupport extends XmlBeanSerializer {
 
     private final PropertyName property;
 
+    private final boolean attribute;
+
     private final Function<PropertyName, String> resolver;
 
-    private XmlSeeAlsoSerializer(BeanSerializer serializer, PropertyName property, Function<PropertyName, String> resolver) {
+    private XmlSeeAlsoSerializerWithXmlSupport(BeanSerializer serializer, PropertyName property, boolean attribute, Function<PropertyName, String> resolver) {
         super(serializer);
         this.property = property;
+        this.attribute = attribute;
         this.resolver = resolver;
     }
 
@@ -32,10 +39,11 @@ class XmlSeeAlsoSerializer extends BeanSerializer {
             BeanSerializer serializer,
             MapperConfig<?> config,
             PropertyName property,
+            boolean attribute,
             Function<PropertyName, String> resolver,
             Map<Class<?>, PropertyName> types
     ) {
-        return new XmlSeeAlsoSerializer(serializer, property, resolver).doWrap(config, types);
+        return new XmlSeeAlsoSerializerWithXmlSupport(serializer, property, attribute, resolver).doWrap(config, types);
     }
 
     JsonSerializer<?> doWrap(MapperConfig<?> config, Map<Class<?>, PropertyName> types) {
@@ -55,7 +63,15 @@ class XmlSeeAlsoSerializer extends BeanSerializer {
                 property,
                 PropertyMetadata.STD_OPTIONAL,
                 JsonInclude.Include.NON_EMPTY
-        ), new AnnotationMap(), type, resolver, types, null);
+        ), new AnnotationMap(), type, resolver, types, new AbstractMap.SimpleEntry<>(
+                XmlBeanSerializerBase.KEY_XML_INFO,
+                new XmlInfo(
+                        attribute,
+                        property.getNamespace(),
+                        false,
+                        false
+                )
+        ));
         return withProperties(properties, _filteredProps);
     }
 }

@@ -10,14 +10,17 @@ import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import java.util.Map;
 import java.util.function.Function;
 
-class XmlSeeAlsoSerializerModifier extends BeanSerializerModifier {
+class XmlSeeAlsoSerializerModifierWithXmlSupport extends BeanSerializerModifier {
 
     private final PropertyName property;
 
+    private final boolean attribute;
+
     private final Function<PropertyName, String> resolver;
 
-    XmlSeeAlsoSerializerModifier(PropertyName property, Function<PropertyName, String> resolver) {
+    XmlSeeAlsoSerializerModifierWithXmlSupport(PropertyName property, boolean attribute, Function<PropertyName, String> resolver) {
         this.property = property;
+        this.attribute = attribute;
         this.resolver = resolver;
     }
 
@@ -26,7 +29,7 @@ class XmlSeeAlsoSerializerModifier extends BeanSerializerModifier {
         if (serializer instanceof BeanSerializer) {
             Map<Class<?>, PropertyName> types = XmlSeeAlsoModule.typesToProperties(description);
             if (types != null) {
-                serializer = XmlSeeAlsoSerializer.wrap((BeanSerializer) serializer, config, property, resolver, types);
+                serializer = XmlSeeAlsoSerializerWithXmlSupport.wrap((BeanSerializer) serializer, config, property, attribute, resolver, types);
             }
         }
         return serializer;

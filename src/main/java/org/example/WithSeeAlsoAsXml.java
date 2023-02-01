@@ -1,6 +1,8 @@
 package org.example;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import org.example.hierarchy.XmlSeeAlsoModule;
 
@@ -12,26 +14,14 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-public class WithSeeAlso {
+public class WithSeeAlsoAsXml {
     public static void main(String[] args) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(XmlSeeAlsoModule.ofAtType())
+        ObjectMapper objectMapper = new XmlMapper()
+                .registerModule(XmlSeeAlsoModule.ofXsi())
                 .registerModule(new JaxbAnnotationModule());
-        String json = objectMapper.writeValueAsString(new Wrapper());
-        System.out.println(json);
-        System.out.println(objectMapper.readValue(json, Wrapper.class).getBase().getClass().getSimpleName());
-
-        StringWriter xml = new StringWriter();
-        JAXBContext.newInstance(Wrapper.class).createMarshaller().marshal(new JAXBElement<>(
-                new QName("element"),
-                Wrapper.class,
-                new Wrapper()
-        ), xml);
+        String xml = objectMapper.writeValueAsString(new Wrapper());
         System.out.println(xml);
-        System.out.println(JAXBContext.newInstance(Wrapper.class).createUnmarshaller().unmarshal(
-                new StreamSource(new StringReader(xml.toString())),
-                Wrapper.class
-        ).getValue().getBase().getClass().getSimpleName());
+        System.out.println(objectMapper.readValue(xml, Wrapper.class).getBase().getClass().getSimpleName());
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)

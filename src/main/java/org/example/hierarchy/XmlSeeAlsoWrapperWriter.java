@@ -24,11 +24,15 @@ class XmlSeeAlsoWrapperWriter extends VirtualBeanPropertyWriter {
             Annotations annotations,
             JavaType type,
             Function<PropertyName, String> resolver,
-            Map<Class<?>, PropertyName> types
+            Map<Class<?>, PropertyName> types,
+            Map.Entry<?, ?> attribute
     ) {
         super(definition, annotations, type);
         this.resolver = resolver;
         this.types = types;
+        if (attribute != null) {
+            setInternalSetting(attribute.getKey(), attribute.getValue());
+        }
     }
 
     @Override
